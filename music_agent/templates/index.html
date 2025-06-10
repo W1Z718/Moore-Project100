@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>情感音乐生成器</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .emotion-btn {
+            transition: all 0.3s ease;
+        }
+        .emotion-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .audio-player {
+            width: 100%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-xl p-8">
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">🎵 情感音乐生成器</h1>
+            <p class="text-center text-gray-600 mb-8">选择一种情感，让AI为您创作专属音乐</p>
+            
+            <div class="grid grid-cols-2 gap-6 mb-8">
+                <button onclick="generateMusic('happy')" class="emotion-btn bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white font-bold py-6 px-6 rounded-xl text-lg">
+                    😊 快乐
+                    <div class="text-sm font-normal mt-1">欢快明亮的旋律</div>
+                </button>
+                <button onclick="generateMusic('sad')" class="emotion-btn bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white font-bold py-6 px-6 rounded-xl text-lg">
+                    😢 悲伤
+                    <div class="text-sm font-normal mt-1">深沉忧郁的音调</div>
+                </button>
+                <button onclick="generateMusic('excited')" class="emotion-btn bg-gradient-to-r from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 text-white font-bold py-6 px-6 rounded-xl text-lg">
+                    🎉 兴奋
+                    <div class="text-sm font-normal mt-1">激昂动感的节拍</div>
+                </button>
+                <button onclick="generateMusic('calm')" class="emotion-btn bg-gradient-to-r from-green-400 to-teal-500 hover:from-green-500 hover:to-teal-600 text-white font-bold py-6 px-6 rounded-xl text-lg">
+                    😌 平静
+                    <div class="text-sm font-normal mt-1">舒缓宁静的和声</div>
+                </button>
+            </div>
+
+            <div id="status" class="text-center mb-8 hidden">
+                <div class="flex items-center justify-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mr-3"></div>
+                    <p class="text-gray-600">正在创作您的专属音乐，请稍候...</p>
+                </div>
+            </div>
+
+            <div id="result" class="hidden">
+                <div class="bg-green-50 border-l-4 border-green-400 text-green-800 p-4 mb-6 rounded-r-lg" role="alert">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p id="result-message" class="font-medium"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-6 text-center">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">🎧 您的专属音乐</h3>
+                    <audio id="audio-player" controls class="audio-player mx-auto mb-4" preload="auto">
+                        您的浏览器不支持音频播放器。
+                    </audio>
+                    <p class="text-sm text-gray-500">点击播放按钮开始聆听</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateMusic(emotion) {
+            // 显示加载状态
+            document.getElementById('status').classList.remove('hidden');
+            document.getElementById('result').classList.add('hidden');
+
+            // 发送请求
+            const formData = new FormData();
+            formData.append('emotion', emotion);
+
+            fetch('/generate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 隐藏加载状态
+                document.getElementById('status').classList.add('hidden');
+                
+                if (data.success) {
+                    // 显示结果
+                    document.getElementById('result').classList.remove('hidden');
+                    document.getElementById('result-message').textContent = data.message;
+                    
+                    // 更新音频播放器
+                    const audioPlayer = document.getElementById('audio-player');
+                    audioPlayer.src = data.file_path;
+                    audioPlayer.load(); // 重新加载音频
+                    
+                    // 自动播放（某些浏览器可能阻止自动播放）
+                    audioPlayer.play().catch(e => {
+                        console.log('自动播放被阻止，用户需要手动点击播放');
+                    });
+                } else {
+                    alert(data.error || '生成音乐时发生错误');
+                }
+            })
+            .catch(error => {
+                document.getElementById('status').classList.add('hidden');
+                alert('生成音乐时发生错误');
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html> 
